@@ -15,7 +15,8 @@ final geminiServiceProvider = Provider<GeminiService>((ref) {
 // Chat Messages Provider
 final chatMessagesProvider =
     NotifierProvider<ChatMessagesNotifier, List<ChatMessage>>(
-        ChatMessagesNotifier.new);
+      ChatMessagesNotifier.new,
+    );
 
 class ChatMessagesNotifier extends Notifier<List<ChatMessage>> {
   @override
@@ -30,11 +31,7 @@ class ChatMessagesNotifier extends Notifier<List<ChatMessage>> {
   }
 
   Future<void> addMessage(String content, String role) async {
-    final message = ChatMessage(
-      id: _uuid.v4(),
-      role: role,
-      content: content,
-    );
+    final message = ChatMessage(id: _uuid.v4(), role: role, content: content);
 
     await Database.chatMessages.add(message);
     state = [...state, message];
@@ -49,7 +46,8 @@ class ChatMessagesNotifier extends Notifier<List<ChatMessage>> {
 // Transactions Provider
 final transactionsProvider =
     NotifierProvider<TransactionsNotifier, List<TransactionModel>>(
-        TransactionsNotifier.new);
+      TransactionsNotifier.new,
+    );
 
 class TransactionsNotifier extends Notifier<List<TransactionModel>> {
   @override
@@ -114,20 +112,71 @@ class TransactionsNotifier extends Notifier<List<TransactionModel>> {
     return totals;
   }
 
-  List<MapEntry<DateTime, double>> getMonthlyTrend(
-      {String? category, int months = 6}) {
+  Future<void> deleteTransaction(String id) async {
+    final index = state.indexWhere((t) => t.id == id);
+    if (index != -1) {
+      final transaction = state[index];
+      await transaction.delete();
+      state = [...state]..removeAt(index);
+    }
+  }
+
+  Future<void> deleteLatest() async {
+    if (state.isEmpty) return;
+    final latest = state.first;
+    await latest.delete();
+    state = state.skip(1).toList();
+  }
+
+  List<TransactionModel> getFilteredTransactions({
+    DateTime? start,
+    DateTime? end,
+    String? category,
+  }) {
+    return state.where((t) {
+      final isAfterStart = start == null || t.date.isAfter(start);
+      final isBeforeEnd = end == null || t.date.isBefore(end);
+      final matchesCategory = category == null || t.category == category;
+      return isAfterStart && isBeforeEnd && matchesCategory;
+    }).toList();
+  }
+
+  List<MapEntry<DateTime, double>> getMonthlyTrend({
+    String? category,
+    int months = 6,
+  }) {
     final now = DateTime.now();
     final trend = <MapEntry<DateTime, double>>[];
 
     for (var i = months - 1; i >= 0; i--) {
       final month = DateTime(now.year, now.month - i, 1);
       final monthTotal = state
-          .where((t) =>
-              t.date.year == month.year &&
-              t.date.month == month.month &&
-              (category == null || t.category == category))
+          .where(
+            (t) =>
+                t.date.year == month.year &&
+                t.date.month == month.month &&
+                (category == null || t.category == category),
+          )
           .fold<double>(0, (sum, t) => sum + t.amount);
       trend.add(MapEntry(month, monthTotal));
+    }
+
+    return trend;
+  }
+
+  List<MapEntry<DateTime, double>> getDailyTrend(int year, int month) {
+    final daysInMonth = DateTime(year, month + 1, 0).day;
+    final trend = <MapEntry<DateTime, double>>[];
+
+    for (var i = 1; i <= daysInMonth; i++) {
+      final date = DateTime(year, month, i);
+      final dayTotal = state
+          .where(
+            (t) =>
+                t.date.year == year && t.date.month == month && t.date.day == i,
+          )
+          .fold<double>(0, (sum, t) => sum + t.amount);
+      trend.add(MapEntry(date, dayTotal));
     }
 
     return trend;
@@ -135,8 +184,9 @@ class TransactionsNotifier extends Notifier<List<TransactionModel>> {
 }
 
 // Settings Provider
-final settingsProvider =
-    NotifierProvider<SettingsNotifier, AppSettings>(SettingsNotifier.new);
+final settingsProvider = NotifierProvider<SettingsNotifier, AppSettings>(
+  SettingsNotifier.new,
+);
 
 class SettingsNotifier extends Notifier<AppSettings> {
   @override

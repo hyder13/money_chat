@@ -45,8 +45,9 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
       _selectedMonth.month,
     );
     final totalAmount = categoryTotals.values.fold<double>(0, (a, b) => a + b);
-    final monthlyTrend = transactionsNotifier.getMonthlyTrend(
-      category: _selectedCategory,
+    final dailyTrend = transactionsNotifier.getDailyTrend(
+      _selectedMonth.year,
+      _selectedMonth.month,
     );
 
     return Scaffold(
@@ -64,7 +65,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                   const SizedBox(height: 32),
                   _buildTrendSection(
                     theme,
-                    monthlyTrend,
+                    dailyTrend,
                     categoryTotals.keys.toList(),
                   ),
                 ],
@@ -310,7 +311,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                                 final index = value.toInt();
                                 if (index >= 0 && index < trend.length) {
                                   return Text(
-                                    '${trend[index].key.month}月',
+                                    '${trend[index].key.day}日',
                                     style: theme.textTheme.bodySmall,
                                   );
                                 }

@@ -80,40 +80,95 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
           .addMessage('發生錯誤，請稍後再試', 'assistant');
     } else if (result['type'] == 'expense') {
       final data = result['data'] as Map<String, dynamic>;
-      final amount = (data['amount'] as num).toDouble();
-      final category = data['category'] as String;
-      final description = data['description'] as String;
+      final action = data['action'] as String;
 
-      if (data['action'] == 'add') {
-        await ref
+      if (action == 'add' || action == 'update') {
+        final amount = (data['amount'] as num).toDouble();
+        final category = data['category'] as String;
+        final description = data['description'] as String;
+
+        if (action == 'add') {
+          await ref
+              .read(transactionsProvider.notifier)
+              .addTransaction(
+                amount: amount,
+                category: category,
+                description: description,
+              );
+
+          // Update category preference
+          await _geminiService.updateCategoryPreference(description, category);
+
+          await ref
+              .read(chatMessagesProvider.notifier)
+              .addMessage(
+                '✓ 已記錄\n$category \$${amount.toStringAsFixed(0)}\n$description',
+                'assistant',
+              );
+        } else {
+          await ref
+              .read(transactionsProvider.notifier)
+              .updateLatest(
+                amount: amount,
+                category: category,
+                description: description,
+              );
+
+          await ref
+              .read(chatMessagesProvider.notifier)
+              .addMessage('✓ 已修改為 \$${amount.toStringAsFixed(0)}', 'assistant');
+        }
+      } else if (action == 'query') {
+        final target = data['target'] as String;
+        final category = data['category'] as String?;
+
+        DateTime start;
+        String periodName;
+        final now = DateTime.now();
+
+        if (target == 'today') {
+          start = DateTime(now.year, now.month, now.day);
+          periodName = '今天';
+        } else if (target == 'week') {
+          start = now.subtract(Duration(days: now.weekday - 1));
+          start = DateTime(start.year, start.month, start.day);
+          periodName = '本週';
+        } else {
+          start = DateTime(now.year, now.month, 1);
+          periodName = '本月';
+        }
+
+        final filtered = ref
             .read(transactionsProvider.notifier)
-            .addTransaction(
-              amount: amount,
-              category: category,
-              description: description,
-            );
+            .getFilteredTransactions(start: start, category: category);
 
-        // Update category preference
-        await _geminiService.updateCategoryPreference(description, category);
+        final total = filtered.fold<double>(0, (sum, t) => sum + t.amount);
+
+        String response =
+            '$periodName${category != null ? '的 $category' : ''}總計：\$${total.toStringAsFixed(0)}';
+        if (filtered.isNotEmpty) {
+          response +=
+              '\n' +
+              filtered
+                  .map(
+                    (t) =>
+                        '• ${t.category}: \$${t.amount.toStringAsFixed(0)} (${t.description})',
+                  )
+                  .join('\n');
+        } else {
+          response += '\n尚無記錄。';
+        }
 
         await ref
             .read(chatMessagesProvider.notifier)
-            .addMessage(
-              '✓ 已記錄\n$category \$${amount.toStringAsFixed(0)}\n$description',
-              'assistant',
-            );
-      } else if (data['action'] == 'update') {
-        await ref
-            .read(transactionsProvider.notifier)
-            .updateLatest(
-              amount: amount,
-              category: category,
-              description: description,
-            );
-
-        await ref
-            .read(chatMessagesProvider.notifier)
-            .addMessage('✓ 已修改為 \$${amount.toStringAsFixed(0)}', 'assistant');
+            .addMessage(response, 'assistant');
+      } else if (action == 'delete') {
+        if (data['target'] == 'latest') {
+          await ref.read(transactionsProvider.notifier).deleteLatest();
+          await ref
+              .read(chatMessagesProvider.notifier)
+              .addMessage('✓ 已刪除最後一筆記錄', 'assistant');
+        }
       }
     } else if (result['type'] == 'error') {
       await ref
