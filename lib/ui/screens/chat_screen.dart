@@ -147,14 +147,13 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
         String response =
             '$periodName${category != null ? '的 $category' : ''}總計：\$${total.toStringAsFixed(0)}';
         if (filtered.isNotEmpty) {
-          response +=
-              '\n' +
-              filtered
-                  .map(
-                    (t) =>
-                        '• ${t.category}: \$${t.amount.toStringAsFixed(0)} (${t.description})',
-                  )
-                  .join('\n');
+          final items = filtered
+              .map(
+                (t) =>
+                    '• ${t.category}: \$${t.amount.toStringAsFixed(0)} (${t.description})',
+              )
+              .join('\n');
+          response += '\n$items';
         } else {
           response += '\n尚無記錄。';
         }

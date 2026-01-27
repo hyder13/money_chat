@@ -1,3 +1,4 @@
+import 'dart:io';
 import 'package:hive_flutter/hive_flutter.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/models.dart';
@@ -15,7 +16,14 @@ class Database {
 
   static Future<void> initialize() async {
     final appDir = await getApplicationDocumentsDirectory();
-    await Hive.initFlutter(appDir.path);
+    final dbDir = Directory('${appDir.path}/money_chat');
+
+    // Create directory if it doesn't exist
+    if (!await dbDir.exists()) {
+      await dbDir.create(recursive: true);
+    }
+
+    await Hive.initFlutter(dbDir.path);
 
     // Register adapters
     Hive.registerAdapter(TransactionModelAdapter());
@@ -47,14 +55,14 @@ class Database {
   static Future<void> cleanupOldMessages() async {
     final thirtyDaysAgo = DateTime.now().subtract(const Duration(days: 30));
     final keysToDelete = <dynamic>[];
-    
+
     for (var i = 0; i < chatMessages.length; i++) {
       final message = chatMessages.getAt(i);
       if (message != null && message.timestamp.isBefore(thirtyDaysAgo)) {
         keysToDelete.add(chatMessages.keyAt(i));
       }
     }
-    
+
     for (final key in keysToDelete) {
       await chatMessages.delete(key);
     }
