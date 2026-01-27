@@ -1,0 +1,387 @@
+import 'package:flutter/material.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+
+import '../../data/models/models.dart';
+import '../../providers/providers.dart';
+import '../../services/gemini_service.dart';
+
+class ChatScreen extends ConsumerStatefulWidget {
+  const ChatScreen({super.key});
+
+  @override
+  ConsumerState<ChatScreen> createState() => _ChatScreenState();
+}
+
+class _ChatScreenState extends ConsumerState<ChatScreen> {
+  final TextEditingController _controller = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
+  final GeminiService _geminiService = GeminiService();
+  bool _isLoading = false;
+  bool _isInitialized = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeGemini();
+  }
+
+  Future<void> _initializeGemini() async {
+    await _geminiService.initialize();
+    setState(() {
+      _isInitialized = _geminiService.isInitialized;
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _scrollToBottom() {
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (_scrollController.hasClients) {
+        _scrollController.animateTo(
+          _scrollController.position.maxScrollExtent,
+          duration: const Duration(milliseconds: 300),
+          curve: Curves.easeOut,
+        );
+      }
+    });
+  }
+
+  Future<void> _sendMessage() async {
+    final message = _controller.text.trim();
+    if (message.isEmpty) return;
+
+    _controller.clear();
+    setState(() => _isLoading = true);
+
+    // Add user message
+    await ref.read(chatMessagesProvider.notifier).addMessage(message, 'user');
+    _scrollToBottom();
+
+    if (!_isInitialized) {
+      await ref
+          .read(chatMessagesProvider.notifier)
+          .addMessage('請先到設定頁面輸入你的 Gemini API Key 🔑', 'assistant');
+      setState(() => _isLoading = false);
+      _scrollToBottom();
+      return;
+    }
+
+    // Send to Gemini
+    final result = await _geminiService.sendMessage(message);
+
+    if (result == null) {
+      await ref
+          .read(chatMessagesProvider.notifier)
+          .addMessage('發生錯誤，請稍後再試', 'assistant');
+    } else if (result['type'] == 'expense') {
+      final data = result['data'] as Map<String, dynamic>;
+      final amount = (data['amount'] as num).toDouble();
+      final category = data['category'] as String;
+      final description = data['description'] as String;
+
+      if (data['action'] == 'add') {
+        await ref
+            .read(transactionsProvider.notifier)
+            .addTransaction(
+              amount: amount,
+              category: category,
+              description: description,
+            );
+
+        // Update category preference
+        await _geminiService.updateCategoryPreference(description, category);
+
+        await ref
+            .read(chatMessagesProvider.notifier)
+            .addMessage(
+              '✓ 已記錄\n$category \$${amount.toStringAsFixed(0)}\n$description',
+              'assistant',
+            );
+      } else if (data['action'] == 'update') {
+        await ref
+            .read(transactionsProvider.notifier)
+            .updateLatest(
+              amount: amount,
+              category: category,
+              description: description,
+            );
+
+        await ref
+            .read(chatMessagesProvider.notifier)
+            .addMessage('✓ 已修改為 \$${amount.toStringAsFixed(0)}', 'assistant');
+      }
+    } else if (result['type'] == 'error') {
+      await ref
+          .read(chatMessagesProvider.notifier)
+          .addMessage(result['data'] as String, 'assistant');
+    } else {
+      await ref
+          .read(chatMessagesProvider.notifier)
+          .addMessage(result['data'] as String, 'assistant');
+    }
+
+    setState(() => _isLoading = false);
+    _scrollToBottom();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final messages = ref.watch(chatMessagesProvider);
+    final theme = Theme.of(context);
+
+    return Scaffold(
+      appBar: AppBar(title: const Text('💰 記帳小幫手')),
+      body: Column(
+        children: [
+          Expanded(
+            child: messages.isEmpty
+                ? _buildEmptyState(theme)
+                : ListView.builder(
+                    controller: _scrollController,
+                    padding: const EdgeInsets.all(16),
+                    itemCount: messages.length + (_isLoading ? 1 : 0),
+                    itemBuilder: (context, index) {
+                      if (_isLoading && index == messages.length) {
+                        return const _TypingIndicator();
+                      }
+                      return _ChatBubble(message: messages[index]);
+                    },
+                  ),
+          ),
+          _buildInputArea(theme),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEmptyState(ThemeData theme) {
+    return Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(
+            Icons.chat_bubble_outline,
+            size: 64,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
+          ),
+          const SizedBox(height: 16),
+          Text(
+            '開始記帳吧！',
+            style: theme.textTheme.titleLarge?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '輸入「午餐 120」這樣就可以記帳了',
+            style: theme.textTheme.bodyMedium?.copyWith(
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildInputArea(ThemeData theme) {
+    return Container(
+      padding: EdgeInsets.only(
+        left: 16,
+        right: 16,
+        top: 12,
+        bottom: MediaQuery.of(context).padding.bottom + 12,
+      ),
+      decoration: BoxDecoration(
+        color: theme.scaffoldBackgroundColor,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: TextField(
+              controller: _controller,
+              decoration: const InputDecoration(hintText: '輸入支出...'),
+              textInputAction: TextInputAction.send,
+              onSubmitted: (_) => _sendMessage(),
+            ),
+          ),
+          const SizedBox(width: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: theme.colorScheme.primary,
+              shape: BoxShape.circle,
+            ),
+            child: IconButton(
+              onPressed: _isLoading ? null : _sendMessage,
+              icon: Icon(Icons.send, color: theme.colorScheme.onPrimary),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ChatBubble extends StatelessWidget {
+  final ChatMessage message;
+
+  const _ChatBubble({required this.message});
+
+  @override
+  Widget build(BuildContext context) {
+    final isUser = message.isUser;
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        mainAxisAlignment: isUser
+            ? MainAxisAlignment.end
+            : MainAxisAlignment.start,
+        children: [
+          if (!isUser) ...[
+            CircleAvatar(
+              radius: 16,
+              backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+              child: const Text('🤖', style: TextStyle(fontSize: 16)),
+            ),
+            const SizedBox(width: 8),
+          ],
+          Flexible(
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+              decoration: BoxDecoration(
+                color: isUser
+                    ? theme.colorScheme.primary
+                    : theme.cardTheme.color ?? theme.colorScheme.surface,
+                borderRadius: BorderRadius.only(
+                  topLeft: const Radius.circular(20),
+                  topRight: const Radius.circular(20),
+                  bottomLeft: Radius.circular(isUser ? 20 : 4),
+                  bottomRight: Radius.circular(isUser ? 4 : 20),
+                ),
+              ),
+              child: Text(
+                message.content,
+                style: TextStyle(
+                  color: isUser
+                      ? theme.colorScheme.onPrimary
+                      : theme.colorScheme.onSurface,
+                ),
+              ),
+            ),
+          ),
+          if (isUser) const SizedBox(width: 8),
+        ],
+      ),
+    );
+  }
+}
+
+class _TypingIndicator extends StatelessWidget {
+  const _TypingIndicator();
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: Row(
+        children: [
+          CircleAvatar(
+            radius: 16,
+            backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+            child: const Text('🤖', style: TextStyle(fontSize: 16)),
+          ),
+          const SizedBox(width: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: theme.cardTheme.color ?? theme.colorScheme.surface,
+              borderRadius: const BorderRadius.only(
+                topLeft: Radius.circular(20),
+                topRight: Radius.circular(20),
+                bottomLeft: Radius.circular(4),
+                bottomRight: Radius.circular(20),
+              ),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: List.generate(3, (i) {
+                return Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 2),
+                  child: _AnimatedDot(delay: i * 200),
+                );
+              }),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _AnimatedDot extends StatefulWidget {
+  final int delay;
+
+  const _AnimatedDot({required this.delay});
+
+  @override
+  State<_AnimatedDot> createState() => _AnimatedDotState();
+}
+
+class _AnimatedDotState extends State<_AnimatedDot>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 600),
+    )..repeat(reverse: true);
+
+    Future.delayed(Duration(milliseconds: widget.delay), () {
+      if (mounted) _controller.forward();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        final alpha = (0.3 + _controller.value * 0.4).clamp(0.0, 1.0);
+        return Container(
+          width: 8,
+          height: 8,
+          decoration: BoxDecoration(
+            color: Theme.of(
+              context,
+            ).colorScheme.onSurface.withValues(alpha: alpha),
+            shape: BoxShape.circle,
+          ),
+        );
+      },
+    );
+  }
+}
