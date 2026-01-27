@@ -1,103 +1,93 @@
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 
 class AppTheme {
-  // Private constructor
   AppTheme._();
 
-  // Colors
-  static const Color _primaryColor = Color(0xFF1A1A2E);
-  static const Color _accentColor = Color(0xFF16213E);
-  static const Color _surfaceDark = Color(0xFF0F0F23);
-  static const Color _textLight = Color(0xFFFAFAFA);
-  static const Color _textDark = Color(0xFF1A1A2E);
+  // Modern Color Palette
+  static const Color _primaryIndigo = Color(0xFF6366F1);
+  static const Color _secondaryViolet = Color(0xFF8B5CF6);
+  static const Color _bgLight = Color(0xFFF9FAFB);
+  static const Color _bgDark = Color(0xFF0F172A);
+  static const Color _surfaceDark = Color(0xFF1E293B);
 
-  // Light Theme
-  static ThemeData get lightTheme => ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.light,
-        colorScheme: ColorScheme.light(
-          primary: _primaryColor,
-          secondary: _accentColor,
-          surface: Colors.white,
-          onSurface: _textDark,
-        ),
-        scaffoldBackgroundColor: const Color(0xFFF8F9FA),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Colors.white,
-          foregroundColor: _textDark,
-          elevation: 0,
-          centerTitle: true,
-        ),
-        navigationBarTheme: NavigationBarThemeData(
-          backgroundColor: Colors.white,
-          indicatorColor: _primaryColor.withValues(alpha: 0.1),
-          labelTextStyle: WidgetStateProperty.all(
-            const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-          ),
-        ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: Colors.grey.shade100,
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
-            borderSide: BorderSide.none,
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 16,
-          ),
-        ),
-        cardTheme: CardThemeData(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          color: Colors.white,
-        ),
-      );
+  static ThemeData get lightTheme => _buildTheme(Brightness.light);
+  static ThemeData get darkTheme => _buildTheme(Brightness.dark);
 
-  // Dark Theme
-  static ThemeData get darkTheme => ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        colorScheme: ColorScheme.dark(
-          primary: Colors.white,
-          secondary: const Color(0xFF4A4A6A),
-          surface: _surfaceDark,
-          onSurface: _textLight,
+  static ThemeData _buildTheme(Brightness brightness) {
+    final isDark = brightness == Brightness.dark;
+    final colorScheme = ColorScheme.fromSeed(
+      seedColor: _primaryIndigo,
+      brightness: brightness,
+      primary: _primaryIndigo,
+      secondary: _secondaryViolet,
+      surface: isDark ? _surfaceDark : Colors.white,
+      onSurface: isDark ? Colors.white : const Color(0xFF1E293B),
+    );
+
+    final baseTheme = ThemeData(
+      useMaterial3: true,
+      brightness: brightness,
+      colorScheme: colorScheme,
+      scaffoldBackgroundColor: isDark ? _bgDark : _bgLight,
+    );
+
+    return baseTheme.copyWith(
+      textTheme: GoogleFonts.outfitTextTheme(baseTheme.textTheme),
+      appBarTheme: AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        titleTextStyle: GoogleFonts.outfit(
+          color: isDark ? Colors.white : const Color(0xFF1E293B),
+          fontSize: 20,
+          fontWeight: FontWeight.w600,
         ),
-        scaffoldBackgroundColor: const Color(0xFF0A0A14),
-        appBarTheme: const AppBarTheme(
-          backgroundColor: Color(0xFF0A0A14),
-          foregroundColor: _textLight,
-          elevation: 0,
-          centerTitle: true,
-        ),
-        navigationBarTheme: NavigationBarThemeData(
-          backgroundColor: _surfaceDark,
-          indicatorColor: Colors.white.withValues(alpha: 0.1),
-          labelTextStyle: WidgetStateProperty.all(
-            const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(24),
+          side: BorderSide(
+            color: (isDark ? Colors.white : Colors.black).withValues(
+              alpha: 0.05,
+            ),
+            width: 1,
           ),
         ),
-        inputDecorationTheme: InputDecorationTheme(
-          filled: true,
-          fillColor: const Color(0xFF1A1A2E),
-          border: OutlineInputBorder(
-            borderRadius: BorderRadius.circular(24),
-            borderSide: BorderSide.none,
-          ),
-          contentPadding: const EdgeInsets.symmetric(
-            horizontal: 20,
-            vertical: 16,
+        color: isDark ? _surfaceDark : Colors.white,
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: isDark ? const Color(0xFF334155) : Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(24),
+          borderSide: BorderSide.none,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(24),
+          borderSide: BorderSide(
+            color: (isDark ? Colors.white : Colors.black).withValues(
+              alpha: 0.05,
+            ),
           ),
         ),
-        cardTheme: CardThemeData(
-          elevation: 0,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(16),
-          ),
-          color: _surfaceDark,
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(24),
+          borderSide: const BorderSide(color: _primaryIndigo, width: 2),
         ),
-      );
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 24,
+          vertical: 16,
+        ),
+      ),
+      navigationBarTheme: NavigationBarThemeData(
+        backgroundColor: isDark ? _bgDark : Colors.white,
+        indicatorColor: _primaryIndigo.withValues(alpha: 0.1),
+        labelTextStyle: WidgetStateProperty.all(
+          GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w500),
+        ),
+      ),
+    );
+  }
 }

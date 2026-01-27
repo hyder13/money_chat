@@ -150,14 +150,14 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
     }
 
     final colors = [
-      const Color(0xFF4ECDC4),
-      const Color(0xFFFF6B6B),
-      const Color(0xFFFFE66D),
-      const Color(0xFF95E1D3),
-      const Color(0xFFF38181),
-      const Color(0xFFAA96DA),
-      const Color(0xFFFCBB6D),
-      const Color(0xFF8785A2),
+      const Color(0xFF6366F1), // Indigo
+      const Color(0xFF8B5CF6), // Violet
+      const Color(0xFFEC4899), // Pink
+      const Color(0xFF10B981), // Emerald
+      const Color(0xFFF59E0B), // Amber
+      const Color(0xFF3B82F6), // Blue
+      const Color(0xFFEF4444), // Red
+      const Color(0xFF64748B), // Slate
     ];
 
     final sortedEntries = categoryTotals.entries.toList()
