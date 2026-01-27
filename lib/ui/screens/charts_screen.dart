@@ -79,23 +79,20 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.pie_chart_outline,
-            size: 64,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-          ),
-          const SizedBox(height: 16),
+          Image.asset('assets/crab_mascot.png', width: 140, height: 140),
+          const SizedBox(height: 24),
           Text(
-            '還沒有記帳資料',
+            '財富沙灘暫時空空如也',
             style: theme.textTheme.titleLarge?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+              fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            '開始記帳後這裡會顯示分析圖表',
+            '開始記帳，讓小螃幫你分析財富流向！',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
         ],
@@ -149,15 +146,15 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
       );
     }
 
-    final colors = [
-      const Color(0xFF6366F1), // Indigo
-      const Color(0xFF8B5CF6), // Violet
-      const Color(0xFFEC4899), // Pink
-      const Color(0xFF10B981), // Emerald
-      const Color(0xFFF59E0B), // Amber
-      const Color(0xFF3B82F6), // Blue
-      const Color(0xFFEF4444), // Red
-      const Color(0xFF64748B), // Slate
+    final List<Color> colors = [
+      theme.colorScheme.primary, // Coral Red
+      theme.colorScheme.secondary, // Ocean Green
+      const Color(0xFFFFB74D), // Amber
+      const Color(0xFF64B5F6), // Light Blue
+      const Color(0xFF81C784), // Light Green
+      const Color(0xFFBA68C8), // Purple
+      const Color(0xFFE57373), // Red
+      const Color(0xFF90A4AE), // Blue Gray
     ];
 
     final sortedEntries = categoryTotals.entries.toList()
@@ -170,36 +167,54 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
           children: [
             SizedBox(
               height: 200,
-              child: PieChart(
-                PieChartData(
-                  sectionsSpace: 2,
-                  centerSpaceRadius: 50,
-                  sections: sortedEntries.asMap().entries.map((entry) {
-                    final index = entry.key;
-                    final categoryEntry = entry.value;
-                    final percentage =
-                        (categoryEntry.value / totalAmount) * 100;
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  PieChart(
+                    PieChartData(
+                      sectionsSpace: 4,
+                      centerSpaceRadius: 60,
+                      sections: sortedEntries.asMap().entries.map((entry) {
+                        final index = entry.key;
+                        final categoryEntry = entry.value;
+                        final percentage =
+                            (categoryEntry.value / totalAmount) * 100;
 
-                    return PieChartSectionData(
-                      color: colors[index % colors.length],
-                      value: categoryEntry.value,
-                      title: '${percentage.toStringAsFixed(0)}%',
-                      radius: 50,
-                      titleStyle: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.bold,
-                        color: Colors.white,
+                        return PieChartSectionData(
+                          color: colors[index % colors.length],
+                          value: categoryEntry.value,
+                          title: '${percentage.toStringAsFixed(0)}%',
+                          radius: 35,
+                          titleStyle: const TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.white,
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ),
+                  Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        '總支出',
+                        style: theme.textTheme.labelSmall?.copyWith(
+                          color: theme.colorScheme.onSurface.withValues(
+                            alpha: 0.5,
+                          ),
+                        ),
                       ),
-                    );
-                  }).toList(),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-            Text(
-              '總支出: \$${totalAmount.toStringAsFixed(0)}',
-              style: theme.textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
+                      Text(
+                        '\$${totalAmount.toStringAsFixed(0)}',
+                        style: theme.textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                          color: theme.colorScheme.primary,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ),
             const SizedBox(height: 16),
@@ -283,7 +298,7 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                           horizontalInterval: _calculateInterval(trend),
                           getDrawingHorizontalLine: (value) => FlLine(
                             color: theme.colorScheme.onSurface.withValues(
-                              alpha: 0.1,
+                              alpha: 0.05,
                             ),
                             strokeWidth: 1,
                           ),
@@ -292,14 +307,17 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                           leftTitles: AxisTitles(
                             sideTitles: SideTitles(
                               showTitles: true,
-                              reservedSize: 50,
+                              reservedSize: 40,
                               getTitlesWidget: (value, meta) {
                                 if (value == meta.max || value == meta.min) {
                                   return const SizedBox();
                                 }
                                 return Text(
-                                  '\$${(value / 1000).toStringAsFixed(0)}k',
-                                  style: theme.textTheme.bodySmall,
+                                  '\$${value.toInt()}',
+                                  style: theme.textTheme.labelSmall?.copyWith(
+                                    color: theme.colorScheme.onSurface
+                                        .withValues(alpha: 0.5),
+                                  ),
                                 );
                               },
                             ),
@@ -310,9 +328,18 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                               getTitlesWidget: (value, meta) {
                                 final index = value.toInt();
                                 if (index >= 0 && index < trend.length) {
+                                  // Show only specific days to avoid crowding
+                                  if (trend[index].key.day % 5 != 1 &&
+                                      trend[index].key.day !=
+                                          _daysInMonth(_selectedMonth)) {
+                                    return const SizedBox();
+                                  }
                                   return Text(
-                                    '${trend[index].key.day}日',
-                                    style: theme.textTheme.bodySmall,
+                                    '${trend[index].key.day}',
+                                    style: theme.textTheme.labelSmall?.copyWith(
+                                      color: theme.colorScheme.onSurface
+                                          .withValues(alpha: 0.5),
+                                    ),
                                   );
                                 }
                                 return const SizedBox();
@@ -333,13 +360,28 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
                               return FlSpot(e.key.toDouble(), e.value.value);
                             }).toList(),
                             isCurved: true,
-                            color: theme.colorScheme.primary,
-                            barWidth: 3,
-                            dotData: const FlDotData(show: true),
+                            gradient: LinearGradient(
+                              colors: [
+                                theme.colorScheme.primary,
+                                theme.colorScheme.secondary,
+                              ],
+                            ),
+                            barWidth: 4,
+                            isStrokeCapRound: true,
+                            dotData: const FlDotData(show: false),
                             belowBarData: BarAreaData(
                               show: true,
-                              color: theme.colorScheme.primary.withValues(
-                                alpha: 0.1,
+                              gradient: LinearGradient(
+                                colors: [
+                                  theme.colorScheme.primary.withValues(
+                                    alpha: 0.2,
+                                  ),
+                                  theme.colorScheme.secondary.withValues(
+                                    alpha: 0,
+                                  ),
+                                ],
+                                begin: Alignment.topCenter,
+                                end: Alignment.bottomCenter,
                               ),
                             ),
                           ),
@@ -354,9 +396,14 @@ class _ChartsScreenState extends ConsumerState<ChartsScreen> {
   }
 
   double _calculateInterval(List<MapEntry<DateTime, double>> trend) {
+    if (trend.isEmpty) return 1000;
     final maxValue = trend.map((e) => e.value).reduce((a, b) => a > b ? a : b);
     if (maxValue <= 0) return 1000;
     return (maxValue / 4).ceilToDouble();
+  }
+
+  int _daysInMonth(DateTime date) {
+    return DateTime(date.year, date.month + 1, 0).day;
   }
 }
 

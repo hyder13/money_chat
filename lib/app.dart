@@ -94,18 +94,18 @@ class AppBottomNav extends StatelessWidget {
       },
       destinations: const [
         NavigationDestination(
-          icon: Icon(Icons.chat_bubble_outline),
-          selectedIcon: Icon(Icons.chat_bubble),
+          icon: Icon(Icons.forum_rounded),
+          selectedIcon: Icon(Icons.forum_rounded),
           label: '記帳',
         ),
         NavigationDestination(
-          icon: Icon(Icons.pie_chart_outline),
-          selectedIcon: Icon(Icons.pie_chart),
+          icon: Icon(Icons.analytics_rounded),
+          selectedIcon: Icon(Icons.analytics_rounded),
           label: '圖表',
         ),
         NavigationDestination(
-          icon: Icon(Icons.settings_outlined),
-          selectedIcon: Icon(Icons.settings),
+          icon: Icon(Icons.tune_rounded),
+          selectedIcon: Icon(Icons.tune_rounded),
           label: '設定',
         ),
       ],

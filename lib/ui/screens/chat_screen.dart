@@ -194,19 +194,27 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       body: Column(
         children: [
           Expanded(
-            child: messages.isEmpty
-                ? _buildEmptyState(theme)
-                : ListView.builder(
-                    controller: _scrollController,
-                    padding: const EdgeInsets.all(16),
-                    itemCount: messages.length + (_isLoading ? 1 : 0),
-                    itemBuilder: (context, index) {
-                      if (_isLoading && index == messages.length) {
-                        return const _TypingIndicator();
-                      }
-                      return _ChatBubble(message: messages[index]);
-                    },
-                  ),
+            child: Container(
+              color: theme.brightness == Brightness.light
+                  ? const Color(0xFFF3F4F6) // Light Gray-Blue
+                  : theme.scaffoldBackgroundColor.withValues(alpha: 0.5),
+              child: messages.isEmpty
+                  ? _buildEmptyState(theme)
+                  : ListView.builder(
+                      controller: _scrollController,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 24,
+                      ),
+                      itemCount: messages.length + (_isLoading ? 1 : 0),
+                      itemBuilder: (context, index) {
+                        if (_isLoading && index == messages.length) {
+                          return const _TypingIndicator();
+                        }
+                        return _ChatBubble(message: messages[index]);
+                      },
+                    ),
+            ),
           ),
           _buildInputArea(theme),
         ],
