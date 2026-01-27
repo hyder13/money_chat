@@ -7,29 +7,29 @@ import 'ui/screens/chat_screen.dart';
 import 'ui/screens/charts_screen.dart';
 import 'ui/screens/settings_screen.dart';
 
+import 'ui/screens/splash_screen.dart';
+
 final _router = GoRouter(
-  initialLocation: '/',
+  initialLocation: '/splash',
   routes: [
+    GoRoute(path: '/splash', builder: (context, state) => const SplashScreen()),
     ShellRoute(
       builder: (context, state, child) => MainShell(child: child),
       routes: [
         GoRoute(
           path: '/',
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: ChatScreen(),
-          ),
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: ChatScreen()),
         ),
         GoRoute(
           path: '/charts',
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: ChartsScreen(),
-          ),
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: ChartsScreen()),
         ),
         GoRoute(
           path: '/settings',
-          pageBuilder: (context, state) => const NoTransitionPage(
-            child: SettingsScreen(),
-          ),
+          pageBuilder: (context, state) =>
+              const NoTransitionPage(child: SettingsScreen()),
         ),
       ],
     ),
@@ -59,10 +59,7 @@ class MainShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: child,
-      bottomNavigationBar: const AppBottomNav(),
-    );
+    return Scaffold(body: child, bottomNavigationBar: const AppBottomNav());
   }
 }
 
@@ -79,7 +76,7 @@ class AppBottomNav extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final selectedIndex = _calculateSelectedIndex(context);
-    
+
     return NavigationBar(
       selectedIndex: selectedIndex,
       onDestinationSelected: (index) {
