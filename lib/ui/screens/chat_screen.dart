@@ -219,29 +219,29 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Icon(
-            Icons.chat_bubble_outline,
-            size: 64,
-            color: theme.colorScheme.onSurface.withValues(alpha: 0.3),
-          ),
-          const SizedBox(height: 16),
+          Image.asset('assets/crab_mascot.png', width: 150, height: 150),
+          const SizedBox(height: 24),
           Text(
-            '開始記帳吧！',
+            '我是小螃，讓我幫你夾住每一分錢！',
             style: theme.textTheme.titleLarge?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+              color: theme.colorScheme.onSurface,
+              fontWeight: FontWeight.bold,
             ),
           ),
           const SizedBox(height: 8),
           Text(
-            '輸入「午餐 120」這樣就可以記帳了',
+            '試試輸入「午餐 120」或問我「今天花了多少？」',
             style: theme.textTheme.bodyMedium?.copyWith(
-              color: theme.colorScheme.onSurface.withValues(alpha: 0.4),
+              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
             ),
           ),
         ],
       ),
     );
   }
+  // ... (omitting transition for brevity if possible, but replace_file_content needs contiguous block)
+  // I'll stick to a single contiguous block for the whole build and avatar part.
+  // Wait, I can't skip part of a contiguous block. I'll target the empty state first, then the bubble.
 
   Widget _buildInputArea(ThemeData theme) {
     return Container(
@@ -360,9 +360,10 @@ class _ChatBubble extends StatelessWidget {
               decoration: BoxDecoration(
                 color: theme.colorScheme.primary.withValues(alpha: 0.1),
                 shape: BoxShape.circle,
-              ),
-              child: const Center(
-                child: Text('🤖', style: TextStyle(fontSize: 16)),
+                image: const DecorationImage(
+                  image: AssetImage('assets/crab_mascot.png'),
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
             const SizedBox(width: 8),

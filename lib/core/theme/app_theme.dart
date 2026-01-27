@@ -4,12 +4,12 @@ import 'package:google_fonts/google_fonts.dart';
 class AppTheme {
   AppTheme._();
 
-  // Modern Color Palette
-  static const Color _primaryIndigo = Color(0xFF6366F1);
-  static const Color _secondaryViolet = Color(0xFF8B5CF6);
-  static const Color _bgLight = Color(0xFFF9FAFB);
-  static const Color _bgDark = Color(0xFF0F172A);
-  static const Color _surfaceDark = Color(0xFF1E293B);
+  // Crabby Theme Palette
+  static const Color _primaryCoral = Color(0xFFFF5252);
+  static const Color _secondaryOcean = Color(0xFF00BFA5);
+  static const Color _bgLight = Color(0xFFF8FAFB);
+  static const Color _bgDark = Color(0xFF0D1B2A);
+  static const Color _surfaceDark = Color(0xFF1B263B);
 
   static ThemeData get lightTheme => _buildTheme(Brightness.light);
   static ThemeData get darkTheme => _buildTheme(Brightness.dark);
@@ -17,12 +17,12 @@ class AppTheme {
   static ThemeData _buildTheme(Brightness brightness) {
     final isDark = brightness == Brightness.dark;
     final colorScheme = ColorScheme.fromSeed(
-      seedColor: _primaryIndigo,
+      seedColor: _primaryCoral,
       brightness: brightness,
-      primary: _primaryIndigo,
-      secondary: _secondaryViolet,
+      primary: _primaryCoral,
+      secondary: _secondaryOcean,
       surface: isDark ? _surfaceDark : Colors.white,
-      onSurface: isDark ? Colors.white : const Color(0xFF1E293B),
+      onSurface: isDark ? Colors.white : const Color(0xFF0D1B2A),
     );
 
     final baseTheme = ThemeData(
@@ -74,7 +74,7 @@ class AppTheme {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(24),
-          borderSide: const BorderSide(color: _primaryIndigo, width: 2),
+          borderSide: const BorderSide(color: _primaryCoral, width: 2),
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 24,
@@ -83,7 +83,7 @@ class AppTheme {
       ),
       navigationBarTheme: NavigationBarThemeData(
         backgroundColor: isDark ? _bgDark : Colors.white,
-        indicatorColor: _primaryIndigo.withValues(alpha: 0.1),
+        indicatorColor: _primaryCoral.withValues(alpha: 0.1),
         labelTextStyle: WidgetStateProperty.all(
           GoogleFonts.outfit(fontSize: 12, fontWeight: FontWeight.w500),
         ),
