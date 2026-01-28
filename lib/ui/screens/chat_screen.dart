@@ -184,13 +184,135 @@ class _ChatScreenState extends ConsumerState<ChatScreen> {
     _scrollToBottom();
   }
 
+  void _showHistoryBottomSheet(BuildContext context) {
+    final transactions = ref.watch(transactionsProvider);
+    final theme = Theme.of(context);
+
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        height: MediaQuery.of(context).size.height * 0.8,
+        decoration: BoxDecoration(
+          color: theme.scaffoldBackgroundColor,
+          borderRadius: const BorderRadius.vertical(top: Radius.circular(28)),
+        ),
+        child: Column(
+          children: [
+            const SizedBox(height: 12),
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: theme.colorScheme.onSurface.withValues(alpha: 0.1),
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Row(
+                children: [
+                  Text(
+                    '最近支出明細',
+                    style: theme.textTheme.titleLarge?.copyWith(
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const Spacer(),
+                  IconButton(
+                    icon: const Icon(Icons.close_rounded),
+                    onPressed: () => Navigator.pop(context),
+                  ),
+                ],
+              ),
+            ),
+            Expanded(
+              child: transactions.isEmpty
+                  ? Center(
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Icon(
+                            Icons.receipt_long_rounded,
+                            size: 64,
+                            color: theme.colorScheme.onSurface.withValues(alpha: 0.2),
+                          ),
+                          const SizedBox(height: 16),
+                          Text(
+                            '尚無記錄',
+                            style: theme.textTheme.bodyLarge?.copyWith(
+                              color: theme.colorScheme.onSurface.withValues(alpha: 0.5),
+                            ),
+                          ),
+                        ],
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.symmetric(horizontal: 16),
+                      itemCount: transactions.length,
+                      itemBuilder: (context, index) {
+                        final t = transactions[index];
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 12),
+                          elevation: 0,
+                          color: theme.colorScheme.surfaceContainerHighest.withValues(alpha: 0.3),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: ListTile(
+                            leading: CircleAvatar(
+                              backgroundColor: theme.colorScheme.primary.withValues(alpha: 0.1),
+                              child: Text(
+                                t.category.substring(0, 1),
+                                style: TextStyle(
+                                  color: theme.colorScheme.primary,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                            ),
+                            title: Text(
+                              t.description,
+                              style: const TextStyle(fontWeight: FontWeight.w600),
+                            ),
+                            subtitle: Text(
+                              '${t.date.month}/${t.date.day} • ${t.category}',
+                              style: theme.textTheme.bodySmall,
+                            ),
+                            trailing: Text(
+                              '\$${t.amount.toStringAsFixed(0)}',
+                              style: theme.textTheme.titleMedium?.copyWith(
+                                fontWeight: FontWeight.bold,
+                                color: theme.colorScheme.primary,
+                              ),
+                            ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final messages = ref.watch(chatMessagesProvider);
     final theme = Theme.of(context);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('💰 記帳小幫手')),
+      appBar: AppBar(
+        title: const Text('💰 記帳小幫手'),
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history_rounded),
+            tooltip: '歷史明細',
+            onPressed: () => _showHistoryBottomSheet(context),
+          ),
+        ],
+      ),
       body: Column(
         children: [
           Expanded(
